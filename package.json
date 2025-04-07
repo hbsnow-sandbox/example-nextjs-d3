@@ -1,0 +1,41 @@
+{
+  "name": "example-nextjs-d3",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "d3": "7.9.0",
+    "next": "15.2.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "zod": "3.24.2"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "3.3.1",
+    "@tailwindcss/postcss": "4.1.0",
+    "@types/d3": "7.4.3",
+    "@types/node": "22.13.17",
+    "@types/react": "19.0.12",
+    "@types/react-dom": "19.0.4",
+    "eslint": "9.23.0",
+    "eslint-config-next": "15.2.4",
+    "eslint-config-prettier": "10.1.1",
+    "globals": "16.0.0",
+    "prettier": "3.5.3",
+    "prettier-plugin-tailwindcss": "0.6.11",
+    "tailwindcss": "4.1.0",
+    "typescript": "5.8.2",
+    "typescript-eslint": "8.29.0"
+  },
+  "engines": {
+    "node": "22.x"
+  },
+  "volta": {
+    "node": "22.13.0"
+  }
+}
