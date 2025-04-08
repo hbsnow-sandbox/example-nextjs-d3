@@ -1,3 +1,7 @@
+# Git
+
+## Commit Messages
+
 Use the Conventional Commit Messages specification to generate commit messages
 
 The commit message should be structured as follows:
