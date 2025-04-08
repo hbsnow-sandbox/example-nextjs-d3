@@ -1,9 +1,9 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# See https://docs.cline.bot/improving-your-prompting-skills/prompting#clineignore-file-guide
 
 # dependencies
 /node_modules
 /.pnp
-.pnp.*
+.pnp.\*
 
 # testing
 /coverage
@@ -17,7 +17,7 @@
 
 # misc
 .DS_Store
-*.pem
+\*.pem
 
 # debug
 npm-debug.log*
@@ -26,11 +26,15 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
+.env\*
 
 # vercel
 .vercel
 
 # typescript
-*.tsbuildinfo
+\*.tsbuildinfo
 next-env.d.ts
+
+# Large data files
+*.csv
+*.xlsx
