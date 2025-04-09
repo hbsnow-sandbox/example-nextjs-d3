@@ -3,16 +3,26 @@
 import { useMemo } from "react";
 import * as d3 from "d3";
 
+const DEFAULT_COLORS = [
+  "#2563eb", // blue-600
+  "#dc2626", // red-600
+  "#16a34a", // green-600
+  "#9333ea", // purple-600
+  "#ea580c", // orange-600
+];
+
 export function LineGraph({
   width,
   height,
   margin = { top: 16, right: 16, bottom: 32, left: 48 },
   data,
+  colors = DEFAULT_COLORS,
 }: {
   width: number;
   height: number;
   margin?: { top: number; right: number; bottom: number; left: number };
-  data: { name: string | number; value: number }[];
+  data: { name: string | number; value: number }[][];
+  colors?: string[];
 }) {
   const plotPosition = useMemo(() => {
     return {
@@ -33,7 +43,7 @@ export function LineGraph({
 
   // X軸
   const xData = useMemo(() => {
-    return data.map((d) => d.name);
+    return data[0]?.map((d) => d.name) ?? [];
   }, [data]);
   const xScale = useMemo(() => {
     return d3
@@ -44,18 +54,16 @@ export function LineGraph({
   }, [plotPosition.origin.x, plotPosition.x.x, xData.length]);
 
   // Y軸
-  const yData = useMemo(() => {
-    return data.map((d) => d.value);
-  }, [data]);
   const yScale = useMemo(() => {
-    const min = d3.min(yData) ?? 0;
-    const max = d3.max(yData) ?? 0;
+    const allValues = data.flat().map((d) => d.value);
+    const min = d3.min(allValues) ?? 0;
+    const max = d3.max(allValues) ?? 0;
     return d3
       .scaleLinear()
       .domain([min, max])
       .range([plotPosition.origin.y, plotPosition.y.y])
       .nice();
-  }, [plotPosition.origin.y, plotPosition.y.y, yData]);
+  }, [plotPosition.origin.y, plotPosition.y.y, data]);
   const yTicks = useMemo(() => {
     const ticks = yScale.ticks();
     const scale = d3
@@ -69,23 +77,30 @@ export function LineGraph({
     }));
   }, [plotPosition.origin.y, plotPosition.y.y, yScale]);
 
-  // データポイント
-  const points = useMemo(() => {
-    return data.map((d, i) => ({
-      name: d.name,
-      value: d.value,
-      x: xScale(i),
-      y: yScale(d.value),
-    }));
-  }, [data, xScale, yScale]);
-  const lineSegments = useMemo(() => {
-    return points.slice(0, -1).map((point, i) => ({
-      x1: point.x,
-      y1: point.y,
-      x2: points[i + 1].x,
-      y2: points[i + 1].y,
-    }));
-  }, [points]);
+  // データポイントとライン
+  const datasets = useMemo(() => {
+    return data.map((dataset, datasetIndex) => {
+      const points = dataset.map((d, i) => ({
+        name: d.name,
+        value: d.value,
+        x: xScale(i),
+        y: yScale(d.value),
+      }));
+
+      const lineSegments = points.slice(0, -1).map((point, i) => ({
+        x1: point.x,
+        y1: point.y,
+        x2: points[i + 1].x,
+        y2: points[i + 1].y,
+      }));
+
+      return {
+        points,
+        lineSegments,
+        color: colors[datasetIndex % colors.length],
+      };
+    });
+  }, [data, xScale, yScale, colors]);
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="100%">
@@ -104,7 +119,8 @@ export function LineGraph({
         y2={plotPosition.y.y}
         stroke="currentColor"
       />
-      {points.map(({ x, name }, i) => (
+      {/* X軸ラベル */}
+      {xData.map((name, i) => (
         <text
           key={i}
           style={{
@@ -112,7 +128,7 @@ export function LineGraph({
             textAnchor: "middle",
             dominantBaseline: "hanging",
           }}
-          x={x}
+          x={xScale(i)}
           y={plotPosition.origin.y}
           dy={12}
         >
@@ -147,25 +163,29 @@ export function LineGraph({
       ))}
 
       {/* Plot */}
-      {lineSegments.map((segment, i) => (
-        <line
-          key={`line-${i}`}
-          x1={segment.x1}
-          y1={segment.y1}
-          x2={segment.x2}
-          y2={segment.y2}
-          stroke="currentColor"
-          strokeWidth="1"
-        />
-      ))}
-      {points.map((point) => (
-        <circle
-          key={point.name}
-          cx={point.x}
-          cy={point.y}
-          r="2"
-          fill="currentColor"
-        />
+      {datasets.map((dataset, datasetIndex) => (
+        <g key={datasetIndex}>
+          {dataset.lineSegments.map((segment, i) => (
+            <line
+              key={`line-${i}`}
+              x1={segment.x1}
+              y1={segment.y1}
+              x2={segment.x2}
+              y2={segment.y2}
+              stroke={dataset.color}
+              strokeWidth="1"
+            />
+          ))}
+          {dataset.points.map((point, i) => (
+            <circle
+              key={i}
+              cx={point.x}
+              cy={point.y}
+              r="2"
+              fill={dataset.color}
+            />
+          ))}
+        </g>
       ))}
     </svg>
   );

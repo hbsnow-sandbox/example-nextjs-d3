@@ -3,16 +3,26 @@
 import { useMemo } from "react";
 import * as d3 from "d3";
 
+const DEFAULT_COLORS = [
+  "#2563eb", // blue-600
+  "#dc2626", // red-600
+  "#16a34a", // green-600
+  "#9333ea", // purple-600
+  "#ea580c", // orange-600
+];
+
 export function BarGraph({
   width,
   height,
   margin = { top: 16, right: 16, bottom: 32, left: 48 },
   data,
+  colors = DEFAULT_COLORS,
 }: {
   width: number;
   height: number;
   margin?: { top: number; right: number; bottom: number; left: number };
-  data: { name: string | number; value: number }[];
+  data: { name: string | number; value: number }[][];
+  colors?: string[];
 }) {
   const plotPosition = useMemo(() => {
     return {
@@ -33,7 +43,7 @@ export function BarGraph({
 
   // X軸
   const xData = useMemo(() => {
-    return data.map((d) => String(d.name));
+    return data[0]?.map((d) => String(d.name)) ?? [];
   }, [data]);
   const xScale = useMemo(() => {
     return d3
@@ -44,18 +54,16 @@ export function BarGraph({
   }, [plotPosition.origin.x, plotPosition.x.x, xData]);
 
   // Y軸
-  const yData = useMemo(() => {
-    return data.map((d) => d.value);
-  }, [data]);
   const yScale = useMemo(() => {
-    const min = d3.min(yData) ?? 0;
-    const max = d3.max(yData) ?? 0;
+    const allValues = data.flat().map((d) => d.value);
+    const min = d3.min(allValues) ?? 0;
+    const max = d3.max(allValues) ?? 0;
     return d3
       .scaleLinear()
       .domain([min, max])
       .range([plotPosition.origin.y, plotPosition.y.y])
       .nice();
-  }, [plotPosition.origin.y, plotPosition.y.y, yData]);
+  }, [plotPosition.origin.y, plotPosition.y.y, data]);
   const yTicks = useMemo(() => {
     const ticks = yScale.ticks();
     const scale = d3
@@ -70,16 +78,21 @@ export function BarGraph({
   }, [plotPosition.origin.y, plotPosition.y.y, yScale]);
 
   // バーの位置とサイズ
-  const bars = useMemo(() => {
-    return data.map((d) => ({
-      name: d.name,
-      value: d.value,
-      x: xScale(String(d.name)) ?? 0,
-      y: yScale(d.value),
-      width: xScale.bandwidth(),
-      height: plotPosition.origin.y - yScale(d.value),
-    }));
-  }, [data, xScale, yScale, plotPosition.origin.y]);
+  const datasets = useMemo(() => {
+    const barWidth = xScale.bandwidth() / data.length;
+
+    return data.map((dataset, datasetIndex) => {
+      return dataset.map((d) => ({
+        name: d.name,
+        value: d.value,
+        x: (xScale(String(d.name)) ?? 0) + barWidth * datasetIndex,
+        y: yScale(d.value),
+        width: barWidth,
+        height: plotPosition.origin.y - yScale(d.value),
+        color: colors[datasetIndex % colors.length],
+      }));
+    });
+  }, [data, xScale, yScale, plotPosition.origin.y, colors]);
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="100%">
@@ -98,7 +111,7 @@ export function BarGraph({
         y2={plotPosition.y.y}
         stroke="currentColor"
       />
-      {bars.map(({ x, name, width }, i) => (
+      {xData.map((name, i) => (
         <text
           key={i}
           style={{
@@ -106,7 +119,7 @@ export function BarGraph({
             textAnchor: "middle",
             dominantBaseline: "hanging",
           }}
-          x={x + width / 2}
+          x={(xScale(name) ?? 0) + xScale.bandwidth() / 2}
           y={plotPosition.origin.y}
           dy={12}
         >
@@ -141,16 +154,18 @@ export function BarGraph({
       ))}
 
       {/* Plot */}
-      {bars.map((bar) => (
-        <rect
-          key={bar.name}
-          x={bar.x}
-          y={bar.y}
-          width={bar.width}
-          height={bar.height}
-          fill="currentColor"
-        />
-      ))}
+      {datasets.map((dataset) =>
+        dataset.map((bar) => (
+          <rect
+            key={`${bar.name}-${bar.color}`}
+            x={bar.x}
+            y={bar.y}
+            width={bar.width}
+            height={bar.height}
+            fill={bar.color}
+          />
+        )),
+      )}
     </svg>
   );
 }

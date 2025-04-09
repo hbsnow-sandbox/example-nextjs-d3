@@ -1,14 +1,14 @@
 import { LineGraph } from "@/components/graph/line";
 import { BarGraph } from "@/components/graph/bar";
 
-const randomData = () =>
+const generateDataset = () =>
   [...Array(9)].map((_, i) => ({
     name: String.fromCharCode(65 + i), // 65は'A'のUnicode値
     value: Math.floor(Math.random() * 100),
   }));
 
 export default function Home() {
-  const data = randomData();
+  const data = [generateDataset(), generateDataset()];
 
   return (
     <main className="p-8">
