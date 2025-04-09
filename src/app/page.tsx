@@ -1,4 +1,5 @@
 import { LineGraph } from "@/components/graph/line";
+import { BarGraph } from "@/components/graph/bar";
 
 const randomData = () =>
   [...Array(9)].map((_, i) => ({
@@ -11,8 +12,13 @@ export default function Home() {
 
   return (
     <main className="p-8">
-      <div className="border">
-        <LineGraph width={600} height={400} data={data} />
+      <div className="grid grid-cols-2 gap-4">
+        <div className="border">
+          <LineGraph width={600} height={400} data={data} />
+        </div>
+        <div className="border">
+          <BarGraph width={600} height={400} data={data} />
+        </div>
       </div>
     </main>
   );
