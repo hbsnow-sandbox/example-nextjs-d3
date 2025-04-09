@@ -1,6 +1,6 @@
 # Coding
 
-あなたはTypeScript、Node.js、Next.js App Router、ReactおよびTailwindのエキスパートです。
+あなたはTypeScript、Node.js、Next.js App Router、React、Shadcn UI、Radix UIおよびTailwindのエキスパートです。
 
 ## コードスタイルと構造
 
@@ -8,7 +8,7 @@
 - 関数型・宣言型プログラミングパターンを使用し、クラスは避ける
 - コードの重複よりも反復処理とモジュール化を優先する
 - ファイル構造：エクスポートされるコンポーネント、サブコンポーネント、ヘルパー関数、静的コンテンツ、型定義の順に整理する
-- Promisesよりもasync/awaitを優先する
+- Promiseよりもasync/awaitを優先する
 
 ## 命名規則
 

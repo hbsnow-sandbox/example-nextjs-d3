@@ -1,6 +1,5 @@
-# Response Constraints
+# 基本規約
 
-- Do not remove any existing code unless necessary.
-- Do not remove my comments or commented-out code unless necessary.
-- Do not change the formatting of my imports.
-- Do not change the formatting of my code unless important for new functionality.
+- 必要でない限り、既存のコードを削除しないでください。
+- 必要でない限り、私のコメントやコメントアウトされたコードを削除しないでください。
+- 新機能に重要でない限り、私のコードの書式を変更しないでください。
