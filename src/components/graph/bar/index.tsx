@@ -15,7 +15,7 @@ export function BarGraph({
   width: number;
   height: number;
   margin?: { top: number; right: number; bottom: number; left: number };
-  data: { name: string | number; value: number }[][];
+  data: { label: string; data: { name: string | number; value: number }[] }[];
   colors?: string[];
 }) {
   const plotPosition = useMemo(() => {
@@ -37,7 +37,7 @@ export function BarGraph({
 
   // X軸
   const xData = useMemo(() => {
-    return data[0]?.map((d) => String(d.name)) ?? [];
+    return data[0]?.data.map((d) => String(d.name)) ?? [];
   }, [data]);
   const xScale = useMemo(() => {
     return d3
@@ -49,7 +49,9 @@ export function BarGraph({
 
   // Y軸
   const yScale = useMemo(() => {
-    const allValues = data.flat().map((d) => d.value);
+    const allValues = data.flatMap((dataset) =>
+      dataset.data.map((d) => d.value),
+    );
     const min = d3.min(allValues) ?? 0;
     const max = d3.max(allValues) ?? 0;
     return d3
@@ -76,15 +78,20 @@ export function BarGraph({
     const barWidth = xScale.bandwidth() / data.length;
 
     return data.map((dataset, datasetIndex) => {
-      return dataset.map((d) => ({
+      const bars = dataset.data.map((d) => ({
         name: d.name,
         value: d.value,
         x: (xScale(String(d.name)) ?? 0) + barWidth * datasetIndex,
         y: yScale(d.value),
         width: barWidth,
         height: plotPosition.origin.y - yScale(d.value),
-        color: colors[datasetIndex % colors.length],
       }));
+
+      return {
+        label: dataset.label,
+        bars,
+        color: colors[datasetIndex % colors.length],
+      };
     });
   }, [data, xScale, yScale, plotPosition.origin.y, colors]);
 
@@ -149,14 +156,14 @@ export function BarGraph({
 
       {/* Plot */}
       {datasets.map((dataset) =>
-        dataset.map((bar) => (
+        dataset.bars.map((bar) => (
           <rect
-            key={`${bar.name}-${bar.color}`}
+            key={`${bar.name}-${dataset.color}`}
             x={bar.x}
             y={bar.y}
             width={bar.width}
             height={bar.height}
-            fill={bar.color}
+            fill={dataset.color}
           />
         )),
       )}
