@@ -1,5 +1,6 @@
 import { LineGraph } from "@/components/graph/line";
 import { BarGraph } from "@/components/graph/bar";
+import { MixedGraph } from "@/components/graph/mixed";
 
 const generateDataset = () =>
   [...Array(9)].map((_, i) => ({
@@ -9,6 +10,10 @@ const generateDataset = () =>
 
 export default function Home() {
   const data = [generateDataset(), generateDataset()];
+  const mixedData = [
+    { type: "bar" as const, data: generateDataset() },
+    { type: "line" as const, data: generateDataset() },
+  ];
 
   return (
     <main className="p-8">
@@ -19,6 +24,9 @@ export default function Home() {
         <div className="border">
           <BarGraph width={600} height={400} data={data} />
         </div>
+      </div>
+      <div className="mt-4 border">
+        <MixedGraph width={1224} height={400} datasets={mixedData} />
       </div>
     </main>
   );
