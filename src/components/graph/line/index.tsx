@@ -197,16 +197,37 @@ export function LineGraph({
 
         {/* ホバーエリア */}
         {xData.map((name, i) => {
-          const x = xScale(i);
-          const nextX = xScale(i + 1);
-          const width =
-            i === xData.length - 1 ? plotPosition.x.x - x : nextX - x;
+          const currentX = xScale(i);
+
+          // 端のケースを考慮した範囲の計算
+          let startX, endX;
+
+          if (i === 0) {
+            // 最初のポイントの場合
+            const nextX = xScale(i + 1);
+            const segmentWidth = nextX - currentX;
+            startX = currentX - segmentWidth / 2; // 次のポイントまでの距離の半分を左に延長
+            endX = (currentX + nextX) / 2;
+          } else if (i === xData.length - 1) {
+            // 最後のポイントの場合
+            const prevX = xScale(i - 1);
+            const segmentWidth = currentX - prevX;
+            startX = (currentX + prevX) / 2;
+            endX = currentX + segmentWidth / 2; // 前のポイントまでの距離の半分を右に延長
+          } else {
+            // 中間のポイントの場合
+            const prevX = xScale(i - 1);
+            const nextX = xScale(i + 1);
+            startX = (currentX + prevX) / 2;
+            endX = (currentX + nextX) / 2;
+          }
+
           return (
             <rect
               key={`hover-${i}`}
-              x={x}
+              x={startX}
               y={plotPosition.y.y}
-              width={width}
+              width={endX - startX}
               height={plotPosition.origin.y - plotPosition.y.y}
               fill="transparent"
               onMouseMove={(e) => handleMouseMove(e, i)}
