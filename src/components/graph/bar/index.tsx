@@ -100,27 +100,29 @@ export function BarGraph({
     visible: boolean;
     x: number;
     y: number;
-    name: string | number;
+    index: number;
   }>({
     visible: false,
     x: 0,
     y: 0,
-    name: "",
+    index: -1,
   });
 
   const [containerRef, setContainerRef] = useState<HTMLDivElement | null>(null);
 
   const handleMouseMove = (
     event: React.MouseEvent<SVGRectElement>,
-    name: string | number,
+    index: number,
   ) => {
     if (!containerRef) return;
     const rect = containerRef.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
     setTooltipState({
       visible: true,
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
-      name,
+      x,
+      y,
+      index,
     });
   };
 
@@ -188,9 +190,50 @@ export function BarGraph({
           />
         ))}
 
+        {/* ホバーエリア */}
+        {xData.map((name, i) => {
+          const currentX = xScale(String(name)) ?? 0;
+          const segmentWidth = xScale.bandwidth();
+          // Y軸の最小値からホバーエリアを開始
+          const y = yScale.domain()[0];
+          const height = plotPosition.origin.y - y;
+
+          return (
+            <rect
+              key={`hover-${i}`}
+              x={currentX}
+              y={y}
+              width={segmentWidth}
+              height={height}
+              fill="transparent"
+              onMouseMove={(e) => handleMouseMove(e, i)}
+              onMouseLeave={handleMouseLeave}
+            />
+          );
+        })}
+
+        {/* ガイドライン */}
+        {tooltipState.visible && (
+          <line
+            x1={
+              (xScale(String(xData[tooltipState.index])) ?? 0) +
+              xScale.bandwidth() / 2
+            }
+            y1={plotPosition.y.y}
+            x2={
+              (xScale(String(xData[tooltipState.index])) ?? 0) +
+              xScale.bandwidth() / 2
+            }
+            y2={plotPosition.origin.y}
+            stroke="currentColor"
+            strokeDasharray="2,2"
+            opacity={0.5}
+          />
+        )}
+
         {/* Plot */}
         {datasets.map((dataset) =>
-          dataset.bars.map((bar) => (
+          dataset.bars.map((bar, i) => (
             <rect
               key={`${bar.name}-${dataset.color}`}
               x={bar.x}
@@ -198,7 +241,7 @@ export function BarGraph({
               width={bar.width}
               height={bar.height}
               fill={dataset.color}
-              onMouseMove={(e) => handleMouseMove(e, bar.name)}
+              onMouseMove={(e) => handleMouseMove(e, i)}
               onMouseLeave={handleMouseLeave}
             />
           )),
@@ -209,12 +252,10 @@ export function BarGraph({
         visible={tooltipState.visible}
         x={tooltipState.x}
         y={tooltipState.y}
-        title={String(tooltipState.name)}
+        title={tooltipState.index >= 0 ? String(xData[tooltipState.index]) : ""}
         items={datasets.map((dataset) => ({
           label: dataset.label,
-          value:
-            dataset.bars.find((bar) => bar.name === tooltipState.name)?.value ??
-            0,
+          value: dataset.bars[tooltipState.index]?.value ?? 0,
           color: dataset.color,
         }))}
       />
