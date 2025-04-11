@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import * as d3 from "d3";
 
 import { DEFAULT_COLORS } from "../constants";
+import { Tooltip } from "../tooltip";
 
 export function BarGraph({
   width,
@@ -95,78 +96,128 @@ export function BarGraph({
     });
   }, [data, xScale, yScale, plotPosition.origin.y, colors]);
 
-  return (
-    <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="100%">
-      {/* Axis */}
-      <line
-        x1={plotPosition.origin.x}
-        y1={plotPosition.origin.y}
-        x2={plotPosition.x.x}
-        y2={plotPosition.x.y}
-        stroke="currentColor"
-      />
-      <line
-        x1={plotPosition.origin.x}
-        y1={plotPosition.origin.y}
-        x2={plotPosition.y.x}
-        y2={plotPosition.y.y}
-        stroke="currentColor"
-      />
-      {xData.map((name, i) => (
-        <text
-          key={i}
-          style={{
-            fontSize: "16px",
-            textAnchor: "middle",
-            dominantBaseline: "hanging",
-          }}
-          x={(xScale(name) ?? 0) + xScale.bandwidth() / 2}
-          y={plotPosition.origin.y}
-          dy={12}
-        >
-          {name}
-        </text>
-      ))}
-      {yTicks.map(({ y, value }, i) => (
-        <text
-          key={i}
-          style={{
-            fontSize: "16px",
-            textAnchor: "end",
-            dominantBaseline: "middle",
-          }}
-          x={plotPosition.origin.x}
-          y={y}
-          dx={-8}
-        >
-          {value}
-        </text>
-      ))}
-      {yTicks.map(({ y }, i) => (
-        <line
-          key={i}
-          x1={plotPosition.origin.x}
-          y1={y}
-          x2={plotPosition.x.x}
-          y2={y}
-          stroke="currentColor"
-          opacity={0.2}
-        />
-      ))}
+  const [tooltipState, setTooltipState] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    name: string | number;
+  }>({
+    visible: false,
+    x: 0,
+    y: 0,
+    name: "",
+  });
 
-      {/* Plot */}
-      {datasets.map((dataset) =>
-        dataset.bars.map((bar) => (
-          <rect
-            key={`${bar.name}-${dataset.color}`}
-            x={bar.x}
-            y={bar.y}
-            width={bar.width}
-            height={bar.height}
-            fill={dataset.color}
+  const [containerRef, setContainerRef] = useState<HTMLDivElement | null>(null);
+
+  const handleMouseMove = (
+    event: React.MouseEvent<SVGRectElement>,
+    name: string | number,
+  ) => {
+    if (!containerRef) return;
+    const rect = containerRef.getBoundingClientRect();
+    setTooltipState({
+      visible: true,
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+      name,
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setTooltipState((prev) => ({ ...prev, visible: false }));
+  };
+
+  return (
+    <div ref={setContainerRef} style={{ position: "relative" }}>
+      <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="100%">
+        {/* Axis */}
+        <line
+          x1={plotPosition.origin.x}
+          y1={plotPosition.origin.y}
+          x2={plotPosition.x.x}
+          y2={plotPosition.x.y}
+          stroke="currentColor"
+        />
+        <line
+          x1={plotPosition.origin.x}
+          y1={plotPosition.origin.y}
+          x2={plotPosition.y.x}
+          y2={plotPosition.y.y}
+          stroke="currentColor"
+        />
+        {xData.map((name, i) => (
+          <text
+            key={i}
+            style={{
+              fontSize: "16px",
+              textAnchor: "middle",
+              dominantBaseline: "hanging",
+            }}
+            x={(xScale(name) ?? 0) + xScale.bandwidth() / 2}
+            y={plotPosition.origin.y}
+            dy={12}
+          >
+            {name}
+          </text>
+        ))}
+        {yTicks.map(({ y, value }, i) => (
+          <text
+            key={i}
+            style={{
+              fontSize: "16px",
+              textAnchor: "end",
+              dominantBaseline: "middle",
+            }}
+            x={plotPosition.origin.x}
+            y={y}
+            dx={-8}
+          >
+            {value}
+          </text>
+        ))}
+        {yTicks.map(({ y }, i) => (
+          <line
+            key={i}
+            x1={plotPosition.origin.x}
+            y1={y}
+            x2={plotPosition.x.x}
+            y2={y}
+            stroke="currentColor"
+            opacity={0.2}
           />
-        )),
-      )}
-    </svg>
+        ))}
+
+        {/* Plot */}
+        {datasets.map((dataset) =>
+          dataset.bars.map((bar) => (
+            <rect
+              key={`${bar.name}-${dataset.color}`}
+              x={bar.x}
+              y={bar.y}
+              width={bar.width}
+              height={bar.height}
+              fill={dataset.color}
+              onMouseMove={(e) => handleMouseMove(e, bar.name)}
+              onMouseLeave={handleMouseLeave}
+            />
+          )),
+        )}
+      </svg>
+
+      <Tooltip
+        visible={tooltipState.visible}
+        x={tooltipState.x}
+        y={tooltipState.y}
+        title={String(tooltipState.name)}
+        items={datasets.map((dataset) => ({
+          label: dataset.label,
+          value:
+            dataset.bars.find((bar) => bar.name === tooltipState.name)?.value ??
+            0,
+          color: dataset.color,
+        }))}
+      />
+    </div>
   );
 }
