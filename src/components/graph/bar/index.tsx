@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import * as d3 from "d3";
 
 import { DEFAULT_COLORS } from "../constants";
+import { Tooltip } from "../tooltip";
 
 export function BarGraph({
   width,
@@ -95,78 +96,173 @@ export function BarGraph({
     });
   }, [data, xScale, yScale, plotPosition.origin.y, colors]);
 
-  return (
-    <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="100%">
-      {/* Axis */}
-      <line
-        x1={plotPosition.origin.x}
-        y1={plotPosition.origin.y}
-        x2={plotPosition.x.x}
-        y2={plotPosition.x.y}
-        stroke="currentColor"
-      />
-      <line
-        x1={plotPosition.origin.x}
-        y1={plotPosition.origin.y}
-        x2={plotPosition.y.x}
-        y2={plotPosition.y.y}
-        stroke="currentColor"
-      />
-      {xData.map((name, i) => (
-        <text
-          key={i}
-          style={{
-            fontSize: "16px",
-            textAnchor: "middle",
-            dominantBaseline: "hanging",
-          }}
-          x={(xScale(name) ?? 0) + xScale.bandwidth() / 2}
-          y={plotPosition.origin.y}
-          dy={12}
-        >
-          {name}
-        </text>
-      ))}
-      {yTicks.map(({ y, value }, i) => (
-        <text
-          key={i}
-          style={{
-            fontSize: "16px",
-            textAnchor: "end",
-            dominantBaseline: "middle",
-          }}
-          x={plotPosition.origin.x}
-          y={y}
-          dx={-8}
-        >
-          {value}
-        </text>
-      ))}
-      {yTicks.map(({ y }, i) => (
-        <line
-          key={i}
-          x1={plotPosition.origin.x}
-          y1={y}
-          x2={plotPosition.x.x}
-          y2={y}
-          stroke="currentColor"
-          opacity={0.2}
-        />
-      ))}
+  // ツールチップの状態管理
+  const [tooltipState, setTooltipState] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    barIndex: string | null;
+    datasetIndex: number | null;
+  }>({
+    visible: false,
+    x: 0,
+    y: 0,
+    barIndex: null,
+    datasetIndex: null,
+  });
 
-      {/* Plot */}
-      {datasets.map((dataset) =>
-        dataset.bars.map((bar) => (
-          <rect
-            key={`${bar.name}-${dataset.color}`}
-            x={bar.x}
-            y={bar.y}
-            width={bar.width}
-            height={bar.height}
-            fill={dataset.color}
+  // コンテナ要素への参照
+  const [containerRef, setContainerRef] = useState<HTMLDivElement | null>(null);
+
+  // マウスイベントハンドラ
+  const handleMouseMove = (
+    event: React.MouseEvent<SVGRectElement>,
+    barName: string | number,
+    datasetIndex: number,
+  ) => {
+    if (!containerRef) return;
+    const rect = containerRef.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    setTooltipState({
+      visible: true,
+      x,
+      y,
+      barIndex: String(barName),
+      datasetIndex,
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setTooltipState((prev) => ({ ...prev, visible: false }));
+  };
+
+  return (
+    <div ref={setContainerRef} style={{ position: "relative" }}>
+      <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="100%">
+        {/* Axis */}
+        <line
+          x1={plotPosition.origin.x}
+          y1={plotPosition.origin.y}
+          x2={plotPosition.x.x}
+          y2={plotPosition.x.y}
+          stroke="currentColor"
+        />
+        <line
+          x1={plotPosition.origin.x}
+          y1={plotPosition.origin.y}
+          x2={plotPosition.y.x}
+          y2={plotPosition.y.y}
+          stroke="currentColor"
+        />
+        {xData.map((name, i) => (
+          <text
+            key={i}
+            style={{
+              fontSize: "16px",
+              textAnchor: "middle",
+              dominantBaseline: "hanging",
+            }}
+            x={(xScale(name) ?? 0) + xScale.bandwidth() / 2}
+            y={plotPosition.origin.y}
+            dy={12}
+          >
+            {name}
+          </text>
+        ))}
+        {yTicks.map(({ y, value }, i) => (
+          <text
+            key={i}
+            style={{
+              fontSize: "16px",
+              textAnchor: "end",
+              dominantBaseline: "middle",
+            }}
+            x={plotPosition.origin.x}
+            y={y}
+            dx={-8}
+          >
+            {value}
+          </text>
+        ))}
+        {yTicks.map(({ y }, i) => (
+          <line
+            key={i}
+            x1={plotPosition.origin.x}
+            y1={y}
+            x2={plotPosition.x.x}
+            y2={y}
+            stroke="currentColor"
+            opacity={0.2}
           />
-        )),
-      )}
-    </svg>
+        ))}
+
+        {/* ホバーエリア */}
+        {xData.map((name) => {
+          const bandWidth = xScale.bandwidth();
+          const bandPosition = xScale(name) ?? 0;
+
+          return (
+            <rect
+              key={`hover-${name}`}
+              x={bandPosition}
+              y={plotPosition.y.y}
+              width={bandWidth}
+              height={plotPosition.origin.y - plotPosition.y.y}
+              fill="transparent"
+              onMouseMove={(e) => {
+                if (!containerRef) return;
+                const rect = containerRef.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                setTooltipState({
+                  visible: true,
+                  x,
+                  y,
+                  barIndex: name,
+                  datasetIndex: null,
+                });
+              }}
+              onMouseLeave={handleMouseLeave}
+            />
+          );
+        })}
+
+        {/* Plot */}
+        {datasets.map((dataset, datasetIndex) =>
+          dataset.bars.map((bar) => (
+            <rect
+              key={`${bar.name}-${dataset.color}`}
+              x={bar.x}
+              y={bar.y}
+              width={bar.width}
+              height={bar.height}
+              fill={dataset.color}
+            />
+          )),
+        )}
+      </svg>
+
+      <Tooltip
+        visible={tooltipState.visible}
+        x={tooltipState.x}
+        y={tooltipState.y}
+        title={tooltipState.barIndex ? String(tooltipState.barIndex) : ""}
+        items={
+          tooltipState.barIndex !== null
+            ? data.map((dataset, i) => {
+                const dataPoint = dataset.data.find(
+                  (d) => String(d.name) === tooltipState.barIndex,
+                );
+                return {
+                  label: dataset.label,
+                  value: dataPoint?.value ?? 0,
+                  color: colors[i % colors.length],
+                };
+              })
+            : []
+        }
+      />
+    </div>
   );
 }
