@@ -1,0 +1,34 @@
+{
+  "github.copilot.chat.codeGeneration.instructions": [
+    {
+      "file": ".github/copilot-instructions.md"
+    },
+    {
+      "file": ".copilot/rules/01-memory-bank.md"
+    },
+    {
+      "file": ".copilot/rules/02-base.md"
+    },
+    {
+      "file": ".copilot/rules/03-git.md"
+    },
+    {
+      "file": ".copilot/rules/04-coding.md"
+    }
+  ],
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "file": ".copilot/settings/commit-message-generation.md"
+    }
+  ],
+  "github.copilot.chat.testGeneration.instructions": [
+    {
+      "file": ".copilot/settings/test-generation.md"
+    }
+  ],
+  "github.copilot.chat.reviewSelection.instructions": [
+    {
+      "file": ".copilot/settings/review-selection.md"
+    }
+  ]
+}
