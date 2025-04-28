@@ -30,5 +30,6 @@
     {
       "file": ".copilot/settings/review-selection.md"
     }
-  ]
+  ],
+  "github.copilot.chat.codesearch.enabled": true
 }
